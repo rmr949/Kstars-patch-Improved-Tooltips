@@ -1,0 +1,444 @@
+diff --git a/kstars/kstars.cpp b/kstars/kstars.cpp
+index e833720..7dc5780 100644
+--- a/kstars/kstars.cpp
++++ b/kstars/kstars.cpp
+@@ -173,6 +173,7 @@ void KStars::applyConfig( bool doApplyFocus ) {
+     actionCollection()->action("show_sbAzAlt"         )->setChecked( Options::showAltAzField() );
+     actionCollection()->action("show_sbRADec"         )->setChecked( Options::showRADecField() );
+     actionCollection()->action("show_stars"           )->setChecked( Options::showStars() );
+     actionCollection()->action("show_deepsky"         )->setChecked( Options::showDeepSky() );
+     actionCollection()->action("show_planets"         )->setChecked( Options::showSolarSystem() );
+     actionCollection()->action("show_clines"          )->setChecked( Options::showCLines() );
+diff --git a/kstars/kstars.h b/kstars/kstars.h
+index 8ac71f5..34375f8 100644
+--- a/kstars/kstars.h
++++ b/kstars/kstars.h
+@@ -473,6 +473,10 @@ public Q_SLOTS:
+     /** action slot: open Flag Manager */
+     void slotFlagManager();
+ 
+ 
+ private slots:
+     /** action slot: open a dialog for setting the time and date */
+     void slotSetTime();
+@@ -618,6 +622,8 @@ private slots:
+     /**Update list of recent supernovae*/
+     void slotUpdateSupernovae();
+ 
++    void factTimerSlot();
++
+ private:
+     /** Load FOV information and repopulate menu. */
+     void repopulateFOV();
+@@ -634,6 +640,8 @@ private:
+     /** Build the KStars main window */
+     void buildGUI();
+ 
++
++
+     KStarsData *kstarsData;
+     SkyMap *skymap;
+ 
+diff --git a/kstars/kstarsactions.cpp b/kstars/kstarsactions.cpp
+index ba7018a..f9337c5 100644
+--- a/kstars/kstarsactions.cpp
++++ b/kstars/kstarsactions.cpp
+@@ -27,6 +27,7 @@
+ #include <QDir>
+ #include <QTextStream>
+ #include <QDialog>
+ #include <kdebug.h>
+ #include <kaction.h>
+@@ -81,6 +82,7 @@
+ #include "tools/flagmanager.h"
+ #include "oal/execute.h"
+ #include "projections/projector.h"
+ #include <config-kstars.h>
+ 
+@@ -104,7 +106,7 @@
+ #include "fitsviewer/fitsviewer.h"
+ #ifdef HAVE_INDI_H
+ #include "ekos/ekos.h"
+ #endif
+ #endif
+ 
+ #ifdef HAVE_XPLANET
+@@ -117,57 +119,154 @@
+ 
+ /** ViewToolBar Action.  All of the viewToolBar buttons are connected to this slot. **/
+
+
+ void KStars::slotViewToolBar() {
+     KToggleAction *a = (KToggleAction*)sender();
+     KConfigDialog *kcd = KConfigDialog::exists( "settings" );
+ 
+     if ( a == actionCollection()->action( "show_stars" ) ) {
+         Options::setShowStars( a->isChecked() );
++        if(a->isChecked())
++        {
++        a->setToolTip("Make stars invisible in the map");
++        }
++        else
++        {
++        a->setToolTip("Make stars visible in the map");
++        }
+         if ( kcd ) {
+             opcatalog->kcfg_ShowStars->setChecked( a->isChecked() );
+         }
+-    } else if ( a == actionCollection()->action( "show_deepsky" ) ) {
++    }
++        else if ( a == actionCollection()->action( "show_deepsky" ) ) {
+         Options::setShowDeepSky( a->isChecked() );
++        if(a->isChecked())
++        {
++        a->setToolTip("Make deepsky objects invisible in the map");
++        }
++        else
++        {
++        a->setToolTip("Make deepsky objects visible in the map");
++        }
+         if ( kcd ) {
+             opcatalog->kcfg_ShowDeepSky->setChecked( a->isChecked() );
+         }
+-    } else if ( a == actionCollection()->action( "show_planets" ) ) {
++    }
++
++    else if ( a == actionCollection()->action( "show_planets" ) ) {
+         Options::setShowSolarSystem( a->isChecked() );
++        if(a->isChecked())
++        {
++        a->setToolTip("Make Solar System objects invisible");
++        }
++        else
++        {
++        a->setToolTip("Make Solar System objects visible");
++        }
+         if ( kcd ) {
+             opsolsys->kcfg_ShowSolarSystem->setChecked( a->isChecked() );
+         }
+-    } else if ( a == actionCollection()->action( "show_clines" ) ) {
++    }
++
++    else if ( a == actionCollection()->action( "show_clines" ) ) {
+         Options::setShowCLines( a->isChecked() );
++        if(a->isChecked())
++        {
++        a->setToolTip("Make Constellation Lines invisible");
++        }
++        else
++        {
++        a->setToolTip("Make Constellation Lines visible");
++        }
+         if ( kcd ) {
+             opguides->kcfg_ShowCLines->setChecked( a->isChecked() );
+         }
+-    } else if ( a == actionCollection()->action( "show_cnames" ) ) {
++    }
++
++    else if ( a == actionCollection()->action( "show_cnames" ) ) {
+         Options::setShowCNames( a->isChecked() );
++        if(a->isChecked())
++        {
++        a->setToolTip("Make Constellation Names invisible");
++        }
++        else
++        {
++        a->setToolTip("Make Constellation Names visible");
++        }
+         if ( kcd ) {
+             opguides->kcfg_ShowCNames->setChecked( a->isChecked() );
+         }
+-    } else if ( a == actionCollection()->action( "show_cbounds" ) ) {
++    }
++
++    else if ( a == actionCollection()->action( "show_cbounds" ) ) {
+         Options::setShowCBounds( a->isChecked() );
++        if(a->isChecked())
++        {
++        a->setToolTip("Make Constellation Boundaries invisible");
++        }
++        else
++        {
++        a->setToolTip("Make Constellation Boundaries visible");
++        }
+         if ( kcd ) {
+             opguides->kcfg_ShowCBounds->setChecked( a->isChecked() );
+         }
+     } else if ( a == actionCollection()->action( "show_mw" ) ) {
+         Options::setShowMilkyWay( a->isChecked() );
++        if(a->isChecked())
++        {
++        a->setToolTip("Make Milky Way invisible");
++        }
++        else
++        {
++        a->setToolTip("Make Milky Way visible");
++        }
+         if ( kcd ) {
+             opguides->kcfg_ShowMilkyWay->setChecked( a->isChecked() );
+         }
+     } else if ( a == actionCollection()->action( "show_equatorial_grid" ) ) {
+         Options::setShowEquatorialGrid( a->isChecked() );
++        if(a->isChecked())
++        {
++        a->setToolTip("Make Equatorial Coordinate Grid invisible");
++        }
++        else
++        {
++        a->setToolTip("Make Equatorial Coordinate Grid visible");
++        }
+         if ( kcd ) {
+             opguides->kcfg_ShowEquatorialGrid->setChecked( a->isChecked() );
+         }
+     } else if ( a == actionCollection()->action( "show_horizontal_grid" ) ) {
+         Options::setShowHorizontalGrid( a->isChecked() );
++        if(a->isChecked())
++        {
++        a->setToolTip("Make Horizontal Coordinate Grid invisible");
++        }
++        else
++        {
++        a->setToolTip("Make Horizontal Coordinate Grid visible");
++        }
+         if ( kcd ) {
+             opguides->kcfg_ShowHorizontalGrid->setChecked( a->isChecked() );
+         }    
+     } else if ( a == actionCollection()->action( "show_horizon" ) ) {
+         Options::setShowGround( a->isChecked() );
++        if(a->isChecked())
++        {
++        a->setToolTip("Make opaque fill of the ground invisible");
++        }
++        else
++        {
++        a->setToolTip("Make opaque fill of the ground visible");
++        }
+         if( !a->isChecked() && Options::useRefraction() ) {
+            QString caption = i18n( "Refraction effects disabled" );
+            QString message = i18n( "When the horizon is switched off, refraction effects are temporarily disabled." );
+@@ -179,16 +278,40 @@ void KStars::slotViewToolBar() {
+         }
+     } else if ( a == actionCollection()->action( "show_flags" ) ) {
+         Options::setShowFlags( a->isChecked() );
++        if(a->isChecked())
++        {
++        a->setToolTip("Make Flags invisible");
++        }
++        else
++        {
++        a->setToolTip("Make Flags visible");
++        }
+         if ( kcd ) {
+             opguides->kcfg_ShowFlags->setChecked( a->isChecked() );
+         }
+     } else if ( a == actionCollection()->action( "show_satellites" ) ) {
+         Options::setShowSatellites( a->isChecked() );
++        if(a->isChecked())
++        {
++        a->setToolTip("Make Satellites invisible");
++        }
++        else
++        {
++        a->setToolTip("Make Satellites visible");
++        }
+         if ( kcd ) {
+             opssatellites->kcfg_ShowSatellites->setChecked( a->isChecked() );
+         }
+     } else if ( a == actionCollection()->action( "show_supernovae" ) ) {
+         Options::setShowSupernovae( a->isChecked() );
++        if(a->isChecked())
++        {
++        a->setToolTip("Make supernovae invisible");
++        }
++        else
++        {
++        a->setToolTip("Make supernovae visible");
++        }
+ //         if ( kcd ) {
+ //             opsupernovae->kcfg_ShowSupernovae->setChecked ( a->isChecked() ) ;
+ //         }
+@@ -984,7 +1107,8 @@ void KStars::slotExecute() {
+ 
+diff --git a/kstars/kstarsinit.cpp b/kstars/kstarsinit.cpp
+index bbc70fe..9af1bae 100644
+--- a/kstars/kstarsinit.cpp
++++ b/kstars/kstarsinit.cpp
+@@ -32,6 +32,7 @@
+ #include <ktoolbar.h>
+ #include <kicon.h>
+ #include <knewstuff3/knewstuffaction.h>
+
+ #include "Options.h"
+ #include "fov.h"
+@@ -46,6 +47,7 @@
+ #include "oal/observeradd.h"
+ #include "skycomponents/skymapcomposite.h"
+ #include "texturemanager.h"
++#include "kfacts.h"
+ 
+ #include <config-kstars.h>
+ 
+@@ -108,11 +110,26 @@ namespace {
+ 
+     // Set tool tip. ToolTip is used as newtype wrapper.
+     struct ToolTip {
+-        QString tip;
+-        ToolTip(QString msg) : tip(msg) {}
++        QString tip1;
++        QString tip2;
++        bool ds;
++        ToolTip(QString msg) : tip1(msg){}
++        ToolTip(bool b,QString msg1,QString msg2) : tip1(msg1),tip2(msg2)
++        {
++            ds=b;
++        }
+     };
++
+     KAction* operator << (KAction* ka, const ToolTip& tool) {
+-        ka->setToolTip(tool.tip);
++            //ka->setToolTip(tool.tip);
++        if(tool.ds)
++        {
++            ka->setToolTip(tool.tip1);
++        }
++        else
++        {
++            ka->setToolTip(tool.tip2);
++        }
+         return ka;
+     }
+ 
+@@ -125,6 +142,8 @@ namespace {
+     }
+ }
+ 
+
++
+ void KStars::initActions() {
+     KIconLoader::global()->addAppDir( "kstars" );
+     KAction *ka;
+@@ -304,6 +323,8 @@ void KStars::initActions() {
+     newToggleAction( actionCollection(), "show_viewToolBar", i18n("Show View Toolbar"),
+                      toolBar( "viewToolBar" ), SLOT(setVisible(bool)));
+ 
++   // newToggleAction()
++
+     //Statusbar view options
+     newToggleAction( actionCollection(), "show_statusBar", i18n("Show Statusbar"),
+                      this, SLOT(slotShowGUIItem(bool)));
+@@ -320,6 +341,8 @@ void KStars::initActions() {
+     addColorMenuItem( i18n("&Night Vision" ), "cs_night" );
+     addColorMenuItem( i18n("&Moonless Night" ), "cs_moonless-night" );
+ 
++    //connect(tmr, SIGNAL(timeout()), SLOT(KStars::factTimerSlot()));
++
+     //Add any user-defined color schemes:
+     QFile file( KStandardDirs::locate("appdata", "colors.dat" ) ); //determine filename in local user KDE directory tree.
+     if ( file.exists() && file.open( QIODevice::ReadOnly ) ) {
+@@ -397,6 +420,9 @@ void KStars::initActions() {
+     actionCollection()->addAction("solarsystem", this, SLOT( slotSolarSystem() ) )
+         << i18n("Solar System...")
+         << KShortcut(Qt::CTRL+Qt::Key_Y );
++//    actionCollection()->addAction("solarsystem", this, SLOT( slotSolarSystem() ) )
++//        << i18n("Solar System...")
++//        << KShortcut(Qt::CTRL+Qt::Key_Y );
+     actionCollection()->addAction("jmoontool", this, SLOT( slotJMoonTool() ) )
+         << i18n("Jupiter's Moons...")
+         << KShortcut(Qt::CTRL+Qt::Key_J );
+@@ -421,7 +447,7 @@ void KStars::initActions() {
+ 
+     actionCollection()->addAction("telescope_wizard", this, SLOT( slotTelescopeWizard() ) )
+         << i18n("Telescope Wizard...")
+-        << KIcon("tools-wizard" );
++       << KIcon("tools-wizard" );
+     actionCollection()->addAction("device_manager", this, SLOT( slotINDIDriver() ) )
+         << i18n("Device Manager...")
+         << KIcon("network-server" );
+@@ -456,58 +482,76 @@ void KStars::initActions() {
+     ka->setDefaultWidget( TimeStep );
+ 
+     // ==== viewToolBar actions ================
++
+     actionCollection()->add<KToggleAction>("show_deepsky", this, SLOT( slotViewToolBar() ) )
+         << i18nc("Toggle Deep Sky Objects in the display", "Deep Sky" )
+         << KIcon("kstars_deepsky" )
+-        << ToolTip( i18n("Toggle deep sky objects") );
++        <<ToolTip(Options::showDeepSky(),i18n("Make deepsky objects invisible in the map "),i18n("Make deepsky objects visible in the map"));
++
++    actionCollection()->add<KToggleAction>("show_stars", this, SLOT( slotViewToolBar() ) )
++        << i18nc("Toggle Stars in the display", "Stars" )
++        << KIcon("kstars_stars" )
++        <<ToolTip(Options::showStars(),i18n("Make stars invisible in the map"),i18n("Make stars visible in the map"));
++
++
+     actionCollection()->add<KToggleAction>("show_planets", this, SLOT( slotViewToolBar() ) )
+         << i18nc("Toggle Solar System objects in the display", "Solar System" )
+         << KIcon("kstars_planets" )
+-        << ToolTip( i18n("Toggle Solar system objects") );
++        <<ToolTip(Options::showSolarSystem(),i18n("Make Solar System objects invisible"),i18n("Make Solar System objects visible"));
++
+     actionCollection()->add<KToggleAction>("show_clines", this, SLOT( slotViewToolBar() ) )
+         << i18nc("Toggle Constellation Lines in the display", "Const. Lines" )
+         << KIcon("kstars_clines" )
+-        << ToolTip( i18n("Toggle constellation lines") );
++        <<ToolTip(Options::showCLines(),i18n("Make Constellation Lines invisible"),i18n("Make Constellation Lines visible"));
++
+     actionCollection()->add<KToggleAction>("show_cnames", this, SLOT( slotViewToolBar() ) )
+         << i18nc("Toggle Constellation Names in the display", "Const. Names" )
+         << KIcon("kstars_cnames" )
+-        << ToolTip( i18n("Toggle constellation names") );
++        <<ToolTip(Options::showCNames(),i18n("Make Constellation names invisible"),i18n("Make Constellation names visible"));
++
+     actionCollection()->add<KToggleAction>("show_cbounds", this, SLOT( slotViewToolBar() ) )
+         << i18nc("Toggle Constellation Boundaries in the display", "C. Boundaries" )
+         << KIcon("kstars_cbound" )
+-        << ToolTip( i18n("Toggle constellation boundaries") );
++        <<ToolTip(Options::showCBounds(),i18n("Make Constellation Boundaries invisible"),i18n("Make Constellation Boundaries visible"));
++
+     actionCollection()->add<KToggleAction>("show_mw", this, SLOT( slotViewToolBar() ) )
+         << i18nc("Toggle Milky Way in the display", "Milky Way" )
+         << KIcon("kstars_mw" )
+-        << ToolTip( i18n("Toggle milky way") );
++        <<ToolTip(Options::showMilkyWay(),i18n("Make Milky Way invisible"),i18n("Make Milky Way visible"));
++
+     actionCollection()->add<KToggleAction>("show_equatorial_grid", this, SLOT( slotViewToolBar() ) )
+         << i18nc("Toggle Equatorial Coordinate Grid in the display", "Equatorial coord. grid" )
+         << KIcon("kstars_grid" )
+-        << ToolTip( i18n("Toggle equatorial coordinate grid") );
++        <<ToolTip(Options::showEquatorialGrid(),i18n("Make Equatorial Coordinate Grid invisible"),i18n("Make Equatorial Coordinate Grid visible"));
++
+     actionCollection()->add<KToggleAction>("show_horizontal_grid", this, SLOT( slotViewToolBar() ) )
+         << i18nc("Toggle Horizontal Coordinate Grid in the display", "Horizontal coord. grid" )
+         << KIcon("kstars_hgrid" )
+-        << ToolTip( i18n("Toggle horizontal coordinate grid") );
++        <<ToolTip(Options::showHorizontalGrid(),i18n("Make Horizontal Coordinate Grid invisible"),i18n("Make Horizontal Coordinate Grid visible"));
++
+     actionCollection()->add<KToggleAction>("show_horizon", this, SLOT( slotViewToolBar() ) )
+         << i18nc("Toggle the opaque fill of the ground polygon in the display", "Ground" )
+         << KIcon("kstars_horizon" )
+-        << ToolTip( i18n("Toggle opaque ground") );
++        <<ToolTip(Options::showHorizon(),i18n("Make opaque fill of the ground invisible"),i18n("Make opaque fill of the ground Grid visible"));
++
+     actionCollection()->add<KToggleAction>("show_flags", this, SLOT( slotViewToolBar() ) )
+         << i18nc("Toggle flags in the display", "Flags" )
+         << KIcon("kstars_flag" )
+-        << ToolTip( i18n("Toggle flags") );
++        <<ToolTip(Options::showFlags(),i18n("Make flags invisible"),i18n("Make flags visible"));
++
+     actionCollection()->add<KToggleAction>("show_satellites", this, SLOT( slotViewToolBar() ) )
+         << i18nc("Toggle satellites in the display", "Satellites" )
+         << KIcon("kstars_satellites" )
+-        << ToolTip( i18n("Toggle satellites") );
++        <<ToolTip(Options::showSatellites(),i18n("Make satellites invisible"),i18n("Make satellites visible"));
++
+     actionCollection()->add<KToggleAction>("show_supernovae", this, SLOT( slotViewToolBar() ) )
+         << i18nc("Toggle supernovae in the display", "Supernovae" )
+         << KIcon("kstars_supernovae" )
+-        << ToolTip( i18n("Toggle supernovae") );
++        <<ToolTip(Options::showSupernovae(),i18n("Make supernovae invisible"),i18n("Make supernovae visible"));
+ 
+     setXMLFile("kstarsui.rc" );
+ 
+@@ -540,26 +584,41 @@ void KStars::repopulateFOV() {
+ }
+ 

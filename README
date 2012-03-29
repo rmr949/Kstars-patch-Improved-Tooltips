@@ -1,0 +1,3 @@
+This patch implements the display on meaningful tooltips like if the stars are visible currently
+instead of just "Toggle Stars" it shows "Make the Stars invisible" and if its invisible it shows
+"Make the stars visible"
